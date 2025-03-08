@@ -1,0 +1,110 @@
+import string
+
+def create_playfair_matrix(key):
+    # Remove duplicates and spaces from the key
+    key = ''.join(sorted(set(key), key=key.index)).replace(" ", "").upper()
+    
+    # Replace 'J' with 'I' for Playfair cipher
+    key = key.replace('J', 'I')
+    
+    # Create a 5x5 matrix
+    matrix = []
+    alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ"  # 'J' is omitted
+    for char in key:
+        if char not in matrix:
+            matrix.append(char)
+    
+    for char in alphabet:
+        if char not in matrix:
+            matrix.append(char)
+    
+    return [matrix[i:i + 5] for i in range(0, 25, 5)]
+
+def format_text(text):
+    text = text.upper().replace("J", "I").replace(" ", "")
+    formatted_text = ""
+    
+    i = 0
+    while i < len(text):
+        if i + 1 < len(text) and text[i] == text[i + 1]:
+            formatted_text += text[i] + 'X'  # Insert 'X' between duplicate letters
+            i += 1
+        else:
+            formatted_text += text[i]
+            i += 1
+    
+    if len(formatted_text) % 2 != 0:  # If odd, add 'X' at the end
+        formatted_text += 'X'
+    
+    return formatted_text
+
+def find_position(matrix, char):
+    for i, row in enumerate(matrix):
+        for j, c in enumerate(row):
+            if c == char:
+                return i, j
+    return None
+
+def encrypt(plaintext, key):
+    matrix = create_playfair_matrix(key)
+    formatted_text = format_text(plaintext)
+    ciphertext = ""
+    
+    for i in range(0, len(formatted_text), 2):
+        row1, col1 = find_position(matrix, formatted_text[i])
+        row2, col2 = find_position(matrix, formatted_text[i + 1])
+        
+        if row1 == row2:  # Same row
+            ciphertext += matrix[row1][(col1 + 1) % 5]
+            ciphertext += matrix[row2][(col2 + 1) % 5]
+        elif col1 == col2:  # Same column
+            ciphertext += matrix[(row1 + 1) % 5][col1]
+            ciphertext += matrix[(row2 + 1) % 5][col2]
+        else:  # Rectangle
+            ciphertext += matrix[row1][col2]
+            ciphertext += matrix[row2][col1]
+    
+    return ciphertext
+
+def decrypt(ciphertext, key):
+    matrix = create_playfair_matrix(key)
+    formatted_text = ciphertext.upper().replace(" ", "")
+    plaintext = ""
+    
+    for i in range(0, len(formatted_text), 2):
+        row1, col1 = find_position(matrix, formatted_text[i])
+        row2, col2 = find_position(matrix, formatted_text[i + 1])
+        
+        if row1 == row2:  # Same row
+            plaintext += matrix[row1][(col1 - 1) % 5]
+            plaintext += matrix[row2][(col2 - 1) % 5]
+        elif col1 == col2:  # Same column
+            plaintext += matrix[(row1 - 1) % 5][col1]
+            plaintext += matrix[(row2 - 1) % 5][col2]
+        else:  # Rectangle
+            plaintext += matrix[row1][col2]
+            plaintext += matrix[row2][col1]
+    
+    return plaintext
+
+def main():
+    action = input("Would you like to (E)ncrypt or (D)ecrypt? ").strip().upper()
+    
+    if action not in ['E', 'D']:
+        print("Invalid option! Please enter 'E' for encrypt or 'D' for decrypt.")
+        return
+    
+    key = input("Enter the key (word or phrase): ")
+    
+    if action == 'E':
+        plaintext = input("Enter the plaintext: ")
+        encrypted_text = encrypt(plaintext, key)
+        print("Encrypted text:", encrypted_text)
+    
+    elif action == 'D':
+        ciphertext = input("Enter the encrypted text: ")
+        decrypted_text = decrypt(ciphertext, key)
+        print("Decrypted text:", decrypted_text)
+
+if __name__ == "__main__":
+    main()
